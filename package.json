@@ -16,8 +16,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "lint-staged": "lint-staged",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prepare": "husky"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -35,6 +37,8 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -50,8 +54,10 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.0",
     "jest-mock-extended": "^4.0.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
     "prisma": "^7.1.0",
     "source-map-support": "^0.5.21",
@@ -79,5 +85,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
