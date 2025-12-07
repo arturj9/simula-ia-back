@@ -23,7 +23,7 @@ import type { AuthenticatedRequest } from './interfaces/authenticated-request.in
 @ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
   @ApiOperation({ summary: 'Criar conta (Professor ou Aluno)' })

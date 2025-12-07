@@ -13,8 +13,8 @@ import { SignInDto } from './dto/signin.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async signUp(data: SignUpDto) {
