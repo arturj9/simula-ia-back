@@ -26,7 +26,7 @@ enum QuestionType {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid())
   name         String
   email        String   @unique
   passwordHash String   @map("password_hash")
@@ -43,7 +43,7 @@ model User {
 }
 
 model Discipline {
-  id          Int      @id @default(autoincrement())
+  id           String   @id @default(uuid())
   name        String   @unique
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
@@ -55,7 +55,7 @@ model Discipline {
 }
 
 model Question {
-  id            Int             @id @default(autoincrement())
+  id            String          @id @default(uuid())
   statement     String
   type          QuestionType    @default(OBJECTIVE)
   difficulty    DifficultyLevel
@@ -65,8 +65,8 @@ model Question {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  disciplineId  Int?            @map("discipline_id")
-  creatorId     Int?            @map("creator_id")
+  disciplineId  String?            @map("discipline_id")
+  creatorId     String?            @map("creator_id")
 
   discipline     Discipline?     @relation(fields: [disciplineId], references: [id])
   creator        User?           @relation("CreatedQuestions", fields: [creatorId], references: [id])
@@ -77,14 +77,14 @@ model Question {
 }
 
 model Exam {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid())
   title        String
   description  String?
   isPublic     Boolean  @default(false) @map("is_public")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  creatorId    Int      @map("creator_id")
-  disciplineId Int?     @map("discipline_id")
+  creatorId    String      @map("creator_id")
+  disciplineId String?     @map("discipline_id")
 
   creator      User           @relation("CreatedExams", fields: [creatorId], references: [id])
   discipline   Discipline?    @relation(fields: [disciplineId], references: [id])
@@ -95,8 +95,8 @@ model Exam {
 }
 
 model ExamQuestion {
-  examId     Int @map("exam_id")
-  questionId Int @map("question_id")
+  examId     String @map("exam_id")
+  questionId String @map("question_id")
   position   Int 
 
   exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
@@ -107,9 +107,9 @@ model ExamQuestion {
 }
 
 model ExamAttempt {
-  id         Int       @id @default(autoincrement())
-  studentId  Int       @map("student_id")
-  examId     Int       @map("exam_id")
+  id         String    @id @default(uuid())
+  studentId  String       @map("student_id")
+  examId     String       @map("exam_id")
   finalScore Float?    @map("final_score")
   
   startedAt  DateTime  @default(now()) @map("started_at")
@@ -123,9 +123,9 @@ model ExamAttempt {
 }
 
 model StudentAnswer {
-  id                 Int     @id @default(autoincrement())
-  attemptId          Int     @map("attempt_id")
-  questionId         Int     @map("question_id")
+  id                 String   @id @default(uuid())
+  attemptId          String     @map("attempt_id")
+  questionId         String     @map("question_id")
   response           String? @map("text_response") 
   correctionFeedback String? @map("correction_feedback")
   pointsEarned       Float   @default(0) @map("points_earned")
