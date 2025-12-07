@@ -25,6 +25,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate # Garante que o Prisma Client está atualizado
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+          DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
 
       - name: Lint Check
         run: npm run lint  # Verifica se o código está formatado (Prettier/ESLint)
