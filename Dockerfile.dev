@@ -1,0 +1,24 @@
+# Imagem Base
+FROM node:22-alpine
+
+# Diretório de trabalho
+WORKDIR /usr/src/app
+
+# 1. Copia arquivos de dependência
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# 2. Instala TODAS as dependências (incluindo devDependencies como ESLint, Jest)
+RUN npm install
+
+# 3. Gera o cliente do Prisma
+RUN npx prisma generate
+
+# 4. Copia o código fonte
+COPY . .
+
+# Expõe a porta
+EXPOSE 3000
+
+# Comando de desenvolvimento (Hot Reload)
+CMD ["npm", "run", "start:dev"]

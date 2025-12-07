@@ -1,0 +1,17 @@
+services:
+  simula-ia-api:
+    container_name: simula-ia-api
+    build:
+      context: .
+      dockerfile: Dockerfile.dev  
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev
+    restart: always

@@ -1,0 +1,137 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PROFESSOR
+  STUDENT
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  OBJECTIVE
+  DISCURSIVE
+  TRUE_FALSE
+  DRAWING
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(STUDENT)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  createdQuestions Question[]    @relation("CreatedQuestions")
+  createdExams     Exam[]        @relation("CreatedExams")
+  examAttempts     ExamAttempt[]
+
+  @@map("users")
+}
+
+model Discipline {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  questions Question[]
+  exams     Exam[]
+
+  @@map("disciplines")
+}
+
+model Question {
+  id            Int             @id @default(autoincrement())
+  statement     String
+  type          QuestionType    @default(OBJECTIVE)
+  difficulty    DifficultyLevel
+  alternatives  Json?           
+  correctAnswer String          @map("correct_answer") 
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  disciplineId  Int?            @map("discipline_id")
+  creatorId     Int?            @map("creator_id")
+
+  discipline     Discipline?     @relation(fields: [disciplineId], references: [id])
+  creator        User?           @relation("CreatedQuestions", fields: [creatorId], references: [id])
+  examsIncluded  ExamQuestion[]  
+  studentAnswers StudentAnswer[] 
+
+  @@map("questions")
+}
+
+model Exam {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  isPublic     Boolean  @default(false) @map("is_public")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  creatorId    Int      @map("creator_id")
+  disciplineId Int?     @map("discipline_id")
+
+  creator      User           @relation("CreatedExams", fields: [creatorId], references: [id])
+  discipline   Discipline?    @relation(fields: [disciplineId], references: [id])
+  questions    ExamQuestion[] 
+  attempts     ExamAttempt[]
+
+  @@map("exams")
+}
+
+model ExamQuestion {
+  examId     Int @map("exam_id")
+  questionId Int @map("question_id")
+  position   Int 
+
+  exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([examId, questionId]) 
+  @@map("exam_questions")
+}
+
+model ExamAttempt {
+  id         Int       @id @default(autoincrement())
+  studentId  Int       @map("student_id")
+  examId     Int       @map("exam_id")
+  finalScore Float?    @map("final_score")
+  
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  student User            @relation(fields: [studentId], references: [id])
+  exam    Exam            @relation(fields: [examId], references: [id])
+  answers StudentAnswer[]
+
+  @@map("exam_attempts")
+}
+
+model StudentAnswer {
+  id                 Int     @id @default(autoincrement())
+  attemptId          Int     @map("attempt_id")
+  questionId         Int     @map("question_id")
+  response           String? @map("text_response") 
+  correctionFeedback String? @map("correction_feedback")
+  pointsEarned       Float   @default(0) @map("points_earned")
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+
+  @@map("student_answers")
+}
