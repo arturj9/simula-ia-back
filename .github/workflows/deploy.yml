@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Só roda quando entrar código na main (Produção)
+
+jobs:
+  # --- JOB 1: GARANTIA DE QUALIDADE ---
+  quality-check:
+    name: 🧪 Run Tests & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci  # 'ci' é mais rápido e seguro que 'install' para pipelines
+
+      - name: Generate Prisma Client
+        run: npx prisma generate # Garante que o Prisma Client está atualizado
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+          DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+
+      - name: Lint Check
+        run: npm run lint  # Verifica se o código está formatado (Prettier/ESLint)
+
+      - name: Run Unit Tests
+        run: npm run test  # Se algum teste falhar, a pipeline PARA AQUI.
+
+  # --- JOB 2: DEPLOY (Só roda se o Job 1 passar) ---
+  deploy:
+    name: 🚀 Deploy to Render
+    needs: quality-check  # <--- ESSA É A MÁGICA (Dependência)
+    runs-on: ubuntu-latest
+    if: success()         # Garante que só roda se o anterior foi sucesso
+    steps:
+      - name: Trigger Render Deploy
+        # Usa curl para acessar a URL secreta e iniciar o deploy
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK }}"

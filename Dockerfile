@@ -5,18 +5,21 @@ FROM node:22-alpine AS builder
 
 WORKDIR /usr/src/app
 
+# 1. Copia arquivos de dependência e configuração
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
-# Instala tudo para poder fazer o build
+# 2. Instala todas as dependências (incluindo dev para compilar)
 RUN npm install
 
+# 3. Copia o código fonte
 COPY . .
 
-# Gera o cliente do Prisma
+# 4. Gera o cliente do Prisma
 RUN npx prisma generate
 
-# Cria a pasta /dist (Converte TS para JS)
+# 5. Compila o projeto (Cria a pasta /dist)
 RUN npm run build
 
 ###################
@@ -26,20 +29,24 @@ FROM node:22-alpine
 
 WORKDIR /usr/src/app
 
-# Copia apenas o package.json para instalar dependências limpas
+RUN apk add --no-cache openssl
+
+# 1. Copia apenas arquivos essenciais para instalação
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
-# Instala APENAS dependências de produção (ignora eslint, jest, ts-node...)
+# 2. Instala APENAS dependências de produção (economiza espaço)
 RUN npm install --omit=dev
 
-# Gera o cliente do Prisma novamente para o ambiente final
+# 3. Gera o cliente do Prisma novamente no ambiente final
+# Isso garante que o binário 'linux-musl' correto seja baixado
 RUN npx prisma generate
 
-# Copia a pasta dist gerada na etapa anterior
+# 4. Copia a aplicação compilada da etapa anterior
 COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 3000
 
-# Roda diretamente o JavaScript compilado (Muito mais rápido e leve)
+# 5. Roda a aplicação
 CMD ["node", "dist/main"]
