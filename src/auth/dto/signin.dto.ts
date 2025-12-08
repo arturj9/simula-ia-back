@@ -2,8 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 const signInSchema = z.object({
-  // ✅ Correto
-  email: z.string().email({ message: 'E-mail inválido' }),
+  email: z.email({ message: 'Formato de e-mail inválido' }),
   password: z.string(),
 });
 
