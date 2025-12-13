@@ -1,24 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { AuthGuard } from './auth.guard';
-import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -39,13 +23,5 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Token JWT gerado.' })
   signIn(@Body() signInDto: SignInDto) {
     return this.authService.signIn(signInDto);
-  }
-
-  @Get('me')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Ver perfil logado' })
-  getProfile(@Request() req: AuthenticatedRequest) {
-    return this.authService.me(req.user.sub);
   }
 }
