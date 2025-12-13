@@ -4,7 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
@@ -69,6 +73,22 @@ describe('AuthService', () => {
 
       await expect(service.signUp(dto)).rejects.toThrow(ConflictException);
     });
+
+    it('deve falhar se ocorrer um erro interno', async () => {
+      const dto = {
+        name: 'Teste',
+        email: 'erro@teste.com',
+        password: '123',
+        role: 'STUDENT' as const,
+      };
+
+      prismaMock.user.findUnique.mockResolvedValue(null);
+      prismaMock.user.create.mockRejectedValue(new Error('Erro interno'));
+
+      await expect(service.signUp(dto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('signIn', () => {
@@ -101,6 +121,24 @@ describe('AuthService', () => {
       } as any);
 
       await expect(service.signIn(dto)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('deve falhar se o email não existir', async () => {
+      const dto = { email: 'nao_existe@teste.com', password: '123' };
+
+      prismaMock.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.signIn(dto)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('deve falhar se ocorrer um erro interno', async () => {
+      const dto = { email: 'teste@teste.com', password: '123' };
+
+      prismaMock.user.findUnique.mockRejectedValue(new Error('Erro interno'));
+
+      await expect(service.signIn(dto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });
