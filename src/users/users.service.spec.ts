@@ -34,8 +34,8 @@ describe('UsersService', () => {
         createdAt: new Date(),
         passwordHash: 'hash',
         updatedAt: new Date(),
-      } as any;
-
+      };
+      // @ts-expect-error - ignorando erro de tipagem estrita do mock do prisma retorno parcial
       prismaMock.user.findUnique.mockResolvedValue(user);
 
       const result = await service.findOne('uuid-1');
