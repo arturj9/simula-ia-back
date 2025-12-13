@@ -60,11 +60,13 @@ describe('UsersService', () => {
   });
 
   describe('update', () => {
-    it('deve atualizar o usuário com sucesso', async () => {
-      prismaMock.user.update.mockResolvedValue({} as any);
+    it('deve atualizar o usuário e retornar os dados', async () => {
+      const updatedUser = { id: 'uuid-1', name: 'Novo Nome' };
+      prismaMock.user.update.mockResolvedValue(updatedUser as any);
 
       const result = await service.update('uuid-1', { name: 'Novo Nome' });
-      expect(result).toBe(true);
+
+      expect(result).toEqual(updatedUser);
     });
 
     it('deve lançar InternalServerErrorException se falhar', async () => {
@@ -77,11 +79,15 @@ describe('UsersService', () => {
   });
 
   describe('delete', () => {
-    it('deve deletar o usuário com sucesso', async () => {
+    it('deve deletar o usuário com sucesso (void)', async () => {
       prismaMock.user.delete.mockResolvedValue({} as any);
 
       const result = await service.delete('uuid-1');
-      expect(result).toBe(true);
+
+      expect(result).toBeUndefined();
+      expect(prismaMock.user.delete).toHaveBeenCalledWith({
+        where: { id: 'uuid-1' },
+      });
     });
 
     it('deve lançar InternalServerErrorException se falhar', async () => {
