@@ -4,7 +4,7 @@
 # 1. Executa todos os testes unitários.
 # Se algum falhar, o commit é cancelado imediatamente.
 echo "🧪 Rodando testes unitários..."
-npm run test -- --passWithNoTests --silent
+npm run test:cov -- --passWithNoTests --silent
 
 # 2. Se os testes passarem, roda o Lint nos arquivos em stage
 npx lint-staged
