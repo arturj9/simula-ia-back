@@ -53,7 +53,7 @@ describe('UsersController', () => {
     const req = { user: { sub: 'uuid-123' } } as any;
     mockUsersService.delete.mockResolvedValue(true);
 
-    controller.deleteProfile(req);
+    await controller.deleteProfile(req);
 
     expect(usersService.delete).toHaveBeenCalledWith('uuid-123');
   });
