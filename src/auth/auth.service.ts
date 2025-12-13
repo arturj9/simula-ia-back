@@ -2,7 +2,7 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
-  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -13,77 +13,80 @@ import { SignInDto } from './dto/signin.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async signUp(data: SignUpDto) {
-    const userExists = await this.prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    try {
+      const userExists = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
 
-    if (userExists) {
-      throw new ConflictException('E-mail já cadastrado.');
+      if (userExists) {
+        throw new ConflictException('E-mail já cadastrado.');
+      }
+
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      const user = await this.prisma.user.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          passwordHash: hashedPassword,
+          role: data.role,
+        },
+      });
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      };
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Não foi possível criar o usuário.',
+      );
     }
-
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        passwordHash: hashedPassword,
-        role: data.role,
-      },
-    });
-
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
   }
 
   async signIn(data: SignInDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
 
-    if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas.');
+      if (!user) {
+        throw new UnauthorizedException('Credenciais inválidas.');
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        data.password,
+        user.passwordHash,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Credenciais inválidas.');
+      }
+
+      const payload = { sub: user.id, email: user.email, role: user.role };
+
+      return {
+        accessToken: await this.jwtService.signAsync(payload),
+      };
+    } catch (error) {
+      console.error('Erro ao realizar login:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Não foi possível realizar o login.',
+      );
     }
-
-    const isPasswordValid = await bcrypt.compare(
-      data.password,
-      user.passwordHash,
-    );
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais inválidas.');
-    }
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
-
-    return {
-      accessToken: await this.jwtService.signAsync(payload),
-    };
-  }
-
-  async me(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) throw new NotFoundException('Usuário não encontrado.');
-
-    return user;
   }
 }

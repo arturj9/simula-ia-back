@@ -1,7 +1,9 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { Logger } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,6 +22,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  const httpAdapter = app.get(HttpAdapterHost);
+
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
+
   await app.listen(process.env.PORT ?? 3000);
   console.log(
     `🚀 Application is running on: http://localhost:${process.env.PORT ?? 3000}`,
@@ -29,4 +35,7 @@ async function bootstrap() {
   );
 }
 
-void bootstrap();
+bootstrap().catch((err) => {
+  new Logger('Bootstrap').error('Erro não tratado na inicialização', err);
+  process.exit(1);
+});
