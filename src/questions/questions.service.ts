@@ -9,11 +9,10 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { FindQuestionsDto } from './dto/find-questions.dto';
 import { Prisma } from '@prisma/client';
-import tr from 'zod/v4/locales/tr.js';
 
 @Injectable()
 export class QuestionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, data: CreateQuestionDto) {
     try {

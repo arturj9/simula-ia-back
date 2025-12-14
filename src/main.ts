@@ -23,19 +23,21 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   const httpAdapter = app.get(HttpAdapterHost);
-
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Application is running on: http://localhost:${process.env.PORT ?? 3000}`,
-  );
-  console.log(
-    `📑 Swagger is running on: http://localhost:${process.env.PORT ?? 3000}/docs`,
-  );
+  const port = process.env.PORT ?? 3000;
+
+  await app.listen(port);
+
+  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`📑 Swagger is running on: http://localhost:${port}/docs`);
 }
 
-bootstrap().catch((err) => {
-  new Logger('Bootstrap').error('Erro não tratado na inicialização', err);
-  process.exit(1);
-});
+void (async () => {
+  try {
+    await bootstrap();
+  } catch (err) {
+    new Logger('Bootstrap').error('Erro não tratado na inicialização', err);
+    process.exit(1);
+  }
+})();

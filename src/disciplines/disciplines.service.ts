@@ -12,7 +12,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DisciplinesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateDisciplineDto) {
     try {
