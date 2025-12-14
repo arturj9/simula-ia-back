@@ -9,6 +9,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { FindQuestionsDto } from './dto/find-questions.dto';
 import { Prisma } from '@prisma/client';
+import tr from 'zod/v4/locales/tr.js';
 
 @Injectable()
 export class QuestionsService {
@@ -166,15 +167,15 @@ export class QuestionsService {
   }
 
   async update(id: string, userId: string, data: UpdateQuestionDto) {
-    const question = await this.findOne(id);
-
-    if (question.creatorId !== userId) {
-      throw new ForbiddenException(
-        'Você não tem permissão para alterar esta questão.',
-      );
-    }
-
     try {
+      const question = await this.findOne(id);
+
+      if (question.creatorId !== userId) {
+        throw new ForbiddenException(
+          'Você não tem permissão para alterar esta questão.',
+        );
+      }
+
       const updateData: Prisma.QuestionUpdateInput = {
         statement: data.statement,
         correctAnswer: data.correctAnswer,
@@ -205,15 +206,15 @@ export class QuestionsService {
   }
 
   async remove(id: string, userId: string) {
-    const question = await this.findOne(id);
-
-    if (question.creatorId !== userId) {
-      throw new ForbiddenException(
-        'Você não tem permissão para deletar esta questão.',
-      );
-    }
-
     try {
+      const question = await this.findOne(id);
+
+      if (question.creatorId !== userId) {
+        throw new ForbiddenException(
+          'Você não tem permissão para deletar esta questão.',
+        );
+      }
+
       await this.prisma.question.delete({
         where: { id },
       });

@@ -32,6 +32,8 @@ describe('QuestionsService', () => {
         correctAnswer: 'A',
         difficulty: 'EASY' as const,
         type: 'OBJECTIVE' as const,
+        alternatives: [{ id: 'a', text: 'Opção A' }],
+        disciplineId: 'disc-1',
       };
       const userId = 'user-uuid';
 
@@ -39,6 +41,7 @@ describe('QuestionsService', () => {
         id: 'q-1',
         ...dto,
         creatorId: userId,
+        alternatives: dto.alternatives,
       } as any);
 
       const result = await service.create(userId, dto);
@@ -46,7 +49,11 @@ describe('QuestionsService', () => {
       expect(result).toHaveProperty('id', 'q-1');
       expect(prismaMock.question.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ creatorId: userId }),
+          data: expect.objectContaining({
+            creatorId: userId,
+            disciplineId: 'disc-1',
+            alternatives: dto.alternatives,
+          }),
         }),
       );
     });
@@ -190,7 +197,7 @@ describe('QuestionsService', () => {
   });
 
   describe('update', () => {
-    it('deve atualizar se for o dono', async () => {
+    it('deve atualizar campos simples se for o dono', async () => {
       prismaMock.question.findUnique.mockResolvedValue({
         id: 'q-1',
         creatorId: 'user-1',
@@ -206,6 +213,55 @@ describe('QuestionsService', () => {
       });
 
       expect(result.statement).toBe('Novo');
+      expect(prismaMock.question.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            statement: 'Novo',
+          }),
+        }),
+      );
+    });
+
+    it('deve atualizar alternatives corretamente', async () => {
+      prismaMock.question.findUnique.mockResolvedValue({
+        id: 'q-1',
+        creatorId: 'user-1',
+      } as any);
+
+      const alternatives = [{ id: 'b', text: 'Opção B' }];
+      prismaMock.question.update.mockResolvedValue({
+        id: 'q-1',
+        alternatives,
+      } as any);
+
+      await service.update('q-1', 'user-1', { alternatives });
+
+      expect(prismaMock.question.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            alternatives: alternatives,
+          }),
+        }),
+      );
+    });
+
+    it('deve conectar disciplina se disciplineId for enviado', async () => {
+      prismaMock.question.findUnique.mockResolvedValue({
+        id: 'q-1',
+        creatorId: 'user-1',
+      } as any);
+
+      prismaMock.question.update.mockResolvedValue({ id: 'q-1' } as any);
+
+      await service.update('q-1', 'user-1', { disciplineId: 'disc-2' });
+
+      expect(prismaMock.question.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            discipline: { connect: { id: 'disc-2' } },
+          }),
+        }),
+      );
     });
 
     it('deve bloquear (Forbidden) se não for o dono', async () => {
@@ -266,9 +322,7 @@ describe('QuestionsService', () => {
         id: 'q-1',
         creatorId: 'user-1',
       } as any);
-      prismaMock.question.delete.mockRejectedValue(
-        new InternalServerErrorException('Erro DB'),
-      );
+      prismaMock.question.delete.mockRejectedValue(new Error('Erro Fatal'));
 
       await expect(service.remove('q-1', 'user-1')).rejects.toThrow(
         InternalServerErrorException,
