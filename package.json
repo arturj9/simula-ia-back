@@ -98,6 +98,7 @@
       "main.ts",
       "prisma.config.ts",
       "prisma.service.ts",
+      "auth.guard.ts",
       "<rootDir>/common/filters"
     ]
   },
