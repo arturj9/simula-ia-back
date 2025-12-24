@@ -207,7 +207,7 @@ export class ExamsService {
       );
     }
 
-    const shuffled = questions.sort(() => 0.5 - Math.random());
+    const shuffled = this.shuffleArray(questions);
 
     const selected = shuffled.slice(0, config.count);
 
@@ -225,5 +225,14 @@ export class ExamsService {
       );
     }
     return ids;
+  }
+
+  private shuffleArray<T>(array: T[]): T[] {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
 }
