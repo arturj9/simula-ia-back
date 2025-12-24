@@ -13,7 +13,7 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 
 @Injectable()
 export class ExamsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, data: CreateExamDto) {
     const exam = await this.prisma.exam.create({
