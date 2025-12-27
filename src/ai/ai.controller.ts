@@ -1,7 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { AiService } from './ai.service';
+import { AiService, AIResponse } from './ai.service';
 import { GenerateQuestionDto } from './dto/generate-question.dto';
-import { AIResponse } from './ai.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
