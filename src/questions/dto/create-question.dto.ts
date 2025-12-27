@@ -4,6 +4,10 @@ import { z } from 'zod';
 const DifficultySchema = z.enum(['EASY', 'MEDIUM', 'HARD']);
 const TypeSchema = z.enum(['OBJECTIVE', 'DISCURSIVE', 'TRUE_FALSE', 'DRAWING']);
 
+const alternativeSchema = z.object({
+  text: z.string(),
+});
+
 export const createQuestionSchema = z.object({
   statement: z.string().min(5, 'O enunciado deve ter pelo menos 5 caracteres'),
 
@@ -13,7 +17,7 @@ export const createQuestionSchema = z.object({
 
   type: TypeSchema.default('OBJECTIVE'),
 
-  alternatives: z.any().optional(),
+  alternatives: z.array(alternativeSchema).optional(),
 
   disciplineId: z.uuid().optional(),
 });
