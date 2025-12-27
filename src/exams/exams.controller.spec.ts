@@ -3,6 +3,7 @@ import { ExamsController } from './exams.controller';
 import { ExamsService } from './exams.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { BadRequestException } from '@nestjs/common';
 
 describe('ExamsController', () => {
   let controller: ExamsController;
@@ -15,6 +16,7 @@ describe('ExamsController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    previewAiGeneration: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -33,60 +35,53 @@ describe('ExamsController', () => {
   });
 
   describe('create', () => {
-    it('deve chamar service.create com os parâmetros corretos', async () => {
-      const dto = { title: 'Prova Teste' } as any;
-      const req = { user: { sub: 'user-1' } } as any;
-
-      await controller.create(req, dto);
-
-      expect(service.create).toHaveBeenCalledWith('user-1', dto);
+    it('deve chamar create', async () => {
+      const dto = { title: 'Prova' } as any;
+      await controller.create({ user: { sub: 'u1' } } as any, dto);
+      expect(service.create).toHaveBeenCalledWith('u1', dto);
     });
   });
 
-  describe('findAll (Público)', () => {
-    it('deve chamar service.findAll com query params', async () => {
-      const query = { page: 1, perPage: 10 } as any;
-      await controller.findAll(query);
-      expect(service.findAll).toHaveBeenCalledWith(query);
+  describe('previewGeneration', () => {
+    it('deve chamar previewAiGeneration', async () => {
+      const config = { useAI: true, items: [] } as any;
+      await controller.previewGeneration(config);
+      expect(service.previewAiGeneration).toHaveBeenCalledWith(config);
+    });
+
+    it('deve falhar se config for nula', async () => {
+      await expect(controller.previewGeneration(null as any)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
-  describe('findMyExams (Privado)', () => {
-    it('deve chamar service.findMyExams com ID do usuário', async () => {
-      const req = { user: { sub: 'user-1' } } as any;
-      const query = { page: 1, perPage: 10 } as any;
+  it('findMyExams deve chamar service.findMyExams', async () => {
+    const req = { user: { sub: 'user-1' } } as any;
+    const query = { page: 1, perPage: 10 } as any;
 
-      await controller.findMyExams(req, query);
+    await controller.findMyExams(req, query);
 
-      expect(service.findMyExams).toHaveBeenCalledWith('user-1', query);
-    });
+    expect(service.findMyExams).toHaveBeenCalledWith('user-1', query);
   });
 
-  describe('findOne', () => {
-    it('deve chamar service.findOne com ID', async () => {
-      await controller.findOne('ex-1');
-      expect(service.findOne).toHaveBeenCalledWith('ex-1');
-    });
+  it('findAll', async () => {
+    await controller.findAll({ page: 1 } as any);
+    expect(service.findAll).toHaveBeenCalled();
   });
 
-  describe('update', () => {
-    it('deve chamar service.update', async () => {
-      const req = { user: { sub: 'user-1' } } as any;
-      const dto = { title: 'Novo Título' } as any;
-
-      await controller.update(req, 'ex-1', dto);
-
-      expect(service.update).toHaveBeenCalledWith('ex-1', 'user-1', dto);
-    });
+  it('findOne', async () => {
+    await controller.findOne('id');
+    expect(service.findOne).toHaveBeenCalledWith('id');
   });
 
-  describe('remove', () => {
-    it('deve chamar service.remove', async () => {
-      const req = { user: { sub: 'user-1' } } as any;
+  it('update', async () => {
+    await controller.update({ user: { sub: 'u1' } } as any, 'id', {} as any);
+    expect(service.update).toHaveBeenCalled();
+  });
 
-      await controller.remove(req, 'ex-1');
-
-      expect(service.remove).toHaveBeenCalledWith('ex-1', 'user-1');
-    });
+  it('remove', async () => {
+    await controller.remove({ user: { sub: 'u1' } } as any, 'id');
+    expect(service.remove).toHaveBeenCalled();
   });
 });

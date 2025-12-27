@@ -12,6 +12,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -48,6 +49,20 @@ export class ExamsController {
     @Body() createExamDto: CreateExamDto,
   ) {
     return this.examsService.create(req.user.sub, createExamDto);
+  }
+
+  @Post('preview-ai')
+  @Roles('PROFESSOR')
+  @ApiOperation({
+    summary: 'Gera questões com IA para curadoria (NÃO salva no banco)',
+  })
+  async previewGeneration(@Body() config: CreateExamDto['generateConfig']) {
+    if (!config)
+      throw new BadRequestException(
+        'Configuração de geração é obrigatória para o preview.',
+      );
+
+    return this.examsService.previewAiGeneration(config);
   }
 
   @Get()

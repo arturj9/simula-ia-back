@@ -57,7 +57,7 @@ model Discipline {
   name        String   @unique
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at") // Adicionado updatedAt por boa prática
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   questions Question[]
   exams     Exam[]
@@ -92,11 +92,10 @@ model Exam {
   title       String
   description String?
   
-  // Alterado de isPublic para visibility para bater com o DTO
   visibility  ExamVisibility @default(PRIVATE) 
   
   createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at") // Adicionado updatedAt
+  updatedAt   DateTime       @updatedAt @map("updated_at")
 
   creatorId    String      @map("creator_id")
   disciplineId String?     @map("discipline_id") // Opcional, pois prova pode ser multidisciplinar
@@ -111,17 +110,16 @@ model Exam {
 }
 
 model ExamQuestion {
-  id         String @id @default(uuid()) // Adicionei ID próprio para facilitar deleção futura se precisar
+  id         String @id @default(uuid())
   examId     String @map("exam_id")
   questionId String @map("question_id")
   
-  // Alterado de 'position' para 'order' para bater com o código do Service
   order      Int    
 
   exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  @@unique([examId, questionId]) // Garante que a mesma questão não repete na prova
+  @@unique([examId, questionId])
   @@map("exam_questions")
 }
 

@@ -1,8 +1,7 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -14,217 +13,150 @@ import { Prisma } from '@prisma/client';
 export class QuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: string, data: CreateQuestionDto) {
-    try {
-      return await this.prisma.question.create({
-        data: {
-          statement: data.statement,
-          correctAnswer: data.correctAnswer,
-          difficulty: data.difficulty,
-          type: data.type,
-          alternatives: (data.alternatives as Prisma.InputJsonValue) ?? [],
-          creatorId: userId,
-          disciplineId: data.disciplineId,
-        },
+  async create(userId: string, createQuestionDto: CreateQuestionDto) {
+    if (createQuestionDto.disciplineId) {
+      const discipline = await this.prisma.discipline.findUnique({
+        where: { id: createQuestionDto.disciplineId },
       });
-    } catch (error) {
-      console.error('Erro ao criar questão:', error);
-      throw new InternalServerErrorException('Erro ao criar questão');
+      if (!discipline) {
+        throw new NotFoundException('Disciplina não encontrada.');
+      }
     }
+
+    return this.prisma.question.create({
+      data: {
+        ...createQuestionDto,
+        creatorId: userId,
+        alternatives: createQuestionDto.alternatives ?? [],
+      },
+    });
+  }
+
+  async findMyQuestions(sub: string, query: FindQuestionsDto) {
+    const {
+      page = 1,
+      perPage = 10,
+      search,
+      disciplineId,
+      difficulty,
+      type,
+    } = query;
+
+    const where: Prisma.QuestionWhereInput = {
+      creatorId: sub,
+      disciplineId,
+      difficulty,
+      type,
+      OR: search
+        ? [{ statement: { contains: search, mode: 'insensitive' } }]
+        : undefined,
+    };
+
+    return this.executeQuery(where, page, perPage);
   }
 
   async findAll(params: FindQuestionsDto) {
-    try {
-      const {
-        page,
-        perPage,
-        search,
-        difficulty,
-        type,
-        orderBy,
-        order,
-        disciplineId,
-      } = params;
+    const {
+      page = 1,
+      perPage = 10,
+      search,
+      disciplineId,
+      difficulty,
+      type,
+    } = params;
 
-      const where: Prisma.QuestionWhereInput = {
-        difficulty,
-        type,
-        disciplineId,
-        statement: search
-          ? { contains: search, mode: 'insensitive' }
-          : undefined,
-      };
+    const where: Prisma.QuestionWhereInput = {
+      disciplineId,
+      difficulty,
+      type,
+      OR: search
+        ? [{ statement: { contains: search, mode: 'insensitive' } }]
+        : undefined,
+    };
 
-      const [total, questions] = await Promise.all([
-        this.prisma.question.count({ where }),
-
-        this.prisma.question.findMany({
-          where,
-          skip: (page - 1) * perPage,
-          take: perPage,
-
-          orderBy: {
-            [orderBy]: order,
-          },
-
-          include: {
-            creator: { select: { name: true, email: true } },
-          },
-        }),
-      ]);
-
-      return {
-        data: questions,
-        meta: {
-          total,
-          page,
-          perPage,
-          lastPage: Math.ceil(total / perPage),
-        },
-      };
-    } catch (error) {
-      console.error('Erro ao buscar questões:', error);
-      throw new InternalServerErrorException(
-        'Não foi possível buscar as questões.',
-      );
-    }
-  }
-
-  async findMyQuestions(userId: string, params: FindQuestionsDto) {
-    try {
-      const {
-        page,
-        perPage,
-        search,
-        difficulty,
-        type,
-        orderBy,
-        order,
-        disciplineId,
-      } = params;
-
-      const where: Prisma.QuestionWhereInput = {
-        creatorId: userId,
-        difficulty,
-        type,
-        disciplineId,
-        statement: search
-          ? { contains: search, mode: 'insensitive' }
-          : undefined,
-      };
-
-      const [total, questions] = await Promise.all([
-        this.prisma.question.count({ where }),
-        this.prisma.question.findMany({
-          where,
-          skip: (page - 1) * perPage,
-          take: perPage,
-          orderBy: { [orderBy]: order },
-          include: {
-            discipline: { select: { name: true } },
-          },
-        }),
-      ]);
-
-      return {
-        data: questions,
-        meta: {
-          total,
-          page,
-          perPage,
-          lastPage: Math.ceil(total / perPage),
-        },
-      };
-    } catch (error) {
-      console.error('Erro ao buscar minhas questões:', error);
-      throw new InternalServerErrorException(
-        'Não foi possível buscar suas questões.',
-      );
-    }
+    return this.executeQuery(where, page, perPage);
   }
 
   async findOne(id: string) {
-    try {
-      const question = await this.prisma.question.findUnique({
-        where: { id },
-        include: { creator: { select: { name: true } } },
-      });
+    const question = await this.prisma.question.findUnique({
+      where: { id },
+      include: {
+        discipline: { select: { name: true } },
+        creator: { select: { name: true } },
+      },
+    });
 
-      if (!question) {
-        throw new NotFoundException('Questão não encontrada.');
-      }
-      return question;
-    } catch (error) {
-      console.error('Erro ao buscar questão:', error);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Não foi possível buscar a questão.',
-      );
+    if (!question) {
+      throw new NotFoundException('Questão não encontrada.');
     }
+
+    return question;
   }
 
-  async update(id: string, userId: string, data: UpdateQuestionDto) {
-    try {
-      const question = await this.findOne(id);
+  async update(
+    id: string,
+    userId: string,
+    updateQuestionDto: UpdateQuestionDto,
+  ) {
+    const question = await this.findOne(id);
 
-      if (question.creatorId !== userId) {
-        throw new ForbiddenException(
-          'Você não tem permissão para alterar esta questão.',
-        );
-      }
-
-      const updateData: Prisma.QuestionUpdateInput = {
-        statement: data.statement,
-        correctAnswer: data.correctAnswer,
-        difficulty: data.difficulty,
-        type: data.type,
-        discipline: data.disciplineId
-          ? { connect: { id: data.disciplineId } }
-          : undefined,
-      };
-
-      if (data.alternatives !== undefined) {
-        updateData.alternatives = data.alternatives as Prisma.InputJsonValue;
-      }
-
-      return await this.prisma.question.update({
-        where: { id },
-        data: updateData,
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar questão:', error);
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Não foi possível atualizar a questão.',
+    if (question.creatorId !== userId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para editar esta questão.',
       );
     }
+
+    return this.prisma.question.update({
+      where: { id },
+      data: updateQuestionDto,
+    });
   }
 
   async remove(id: string, userId: string) {
-    try {
-      const question = await this.findOne(id);
+    const question = await this.findOne(id);
 
-      if (question.creatorId !== userId) {
-        throw new ForbiddenException(
-          'Você não tem permissão para deletar esta questão.',
-        );
-      }
-
-      await this.prisma.question.delete({
-        where: { id },
-      });
-    } catch (error) {
-      console.error('Erro ao deletar questão:', error);
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Não foi possível deletar a questão.',
+    if (question.creatorId !== userId) {
+      throw new ForbiddenException(
+        'Você não tem permissão para excluir esta questão.',
       );
     }
+
+    return this.prisma.question.delete({
+      where: { id },
+    });
+  }
+
+  private async executeQuery(
+    where: Prisma.QuestionWhereInput,
+    page: number,
+    perPage: number,
+  ) {
+    const [total, questions] = await Promise.all([
+      this.prisma.question.count({ where }),
+      this.prisma.question.findMany({
+        where,
+        skip: (page - 1) * perPage,
+        take: perPage,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          creator: {
+            select: { name: true, email: true },
+          },
+          discipline: {
+            select: { name: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: questions,
+      meta: {
+        total,
+        page,
+        perPage,
+        lastPage: Math.ceil(total / perPage),
+      },
+    };
   }
 }

@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { QuestionsModule } from './questions/questions.module';
 import { DisciplinesModule } from './disciplines/disciplines.module';
 import { ExamsModule } from './exams/exams.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ExamsModule } from './exams/exams.module';
     QuestionsModule,
     DisciplinesModule,
     ExamsModule,
+    AiModule,
   ],
   controllers: [],
   providers: [],
