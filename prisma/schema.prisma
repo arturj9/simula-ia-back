@@ -98,7 +98,7 @@ model Exam {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   creatorId    String      @map("creator_id")
-  disciplineId String?     @map("discipline_id")
+  disciplineId String?     @map("discipline_id") // Opcional, pois prova pode ser multidisciplinar
 
   creator    User          @relation("CreatedExams", fields: [creatorId], references: [id])
   discipline Discipline?   @relation(fields: [disciplineId], references: [id])
