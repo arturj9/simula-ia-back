@@ -17,12 +17,12 @@ export interface AIResponse {
 
 @Injectable()
 export class AiService {
-  private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
+  private readonly genAI: GoogleGenerativeAI;
+  private readonly model: GenerativeModel;
 
   constructor(
-    private configService: ConfigService,
-    private prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
@@ -125,8 +125,8 @@ export class AiService {
         const text = response.text();
 
         const cleanText = text
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
+          .replaceAll('```json', '')
+          .replaceAll('```', '')
           .trim();
 
         return JSON.parse(cleanText) as AIResponse;
