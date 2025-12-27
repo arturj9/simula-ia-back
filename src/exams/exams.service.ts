@@ -17,7 +17,7 @@ import { CreateQuestionDto } from '../questions/dto/create-question.dto';
 export class ExamsService {
   constructor(
     private readonly prisma: PrismaService,
-    private aiService: AiService,
+    private readonly aiService: AiService,
   ) {}
 
   async previewAiGeneration(
