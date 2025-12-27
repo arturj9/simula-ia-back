@@ -52,33 +52,7 @@ export class QuestionsService {
         : undefined,
     };
 
-    const [total, questions] = await Promise.all([
-      this.prisma.question.count({ where }),
-      this.prisma.question.findMany({
-        where,
-        skip: (page - 1) * perPage,
-        take: perPage,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          creator: {
-            select: { name: true, email: true },
-          },
-          discipline: {
-            select: { name: true },
-          },
-        },
-      }),
-    ]);
-
-    return {
-      data: questions,
-      meta: {
-        total,
-        page,
-        perPage,
-        lastPage: Math.ceil(total / perPage),
-      },
-    };
+    return this.executeQuery(where, page, perPage);
   }
 
   async findAll(params: FindQuestionsDto) {
@@ -100,33 +74,7 @@ export class QuestionsService {
         : undefined,
     };
 
-    const [total, questions] = await Promise.all([
-      this.prisma.question.count({ where }),
-      this.prisma.question.findMany({
-        where,
-        skip: (page - 1) * perPage,
-        take: perPage,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          creator: {
-            select: { name: true, email: true },
-          },
-          discipline: {
-            select: { name: true },
-          },
-        },
-      }),
-    ]);
-
-    return {
-      data: questions,
-      meta: {
-        total,
-        page,
-        perPage,
-        lastPage: Math.ceil(total / perPage),
-      },
-    };
+    return this.executeQuery(where, page, perPage);
   }
 
   async findOne(id: string) {
@@ -176,5 +124,39 @@ export class QuestionsService {
     return this.prisma.question.delete({
       where: { id },
     });
+  }
+
+  private async executeQuery(
+    where: Prisma.QuestionWhereInput,
+    page: number,
+    perPage: number,
+  ) {
+    const [total, questions] = await Promise.all([
+      this.prisma.question.count({ where }),
+      this.prisma.question.findMany({
+        where,
+        skip: (page - 1) * perPage,
+        take: perPage,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          creator: {
+            select: { name: true, email: true },
+          },
+          discipline: {
+            select: { name: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: questions,
+      meta: {
+        total,
+        page,
+        perPage,
+        lastPage: Math.ceil(total / perPage),
+      },
+    };
   }
 }
