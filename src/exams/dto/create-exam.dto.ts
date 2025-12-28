@@ -12,6 +12,16 @@ const generationItemSchema = z.object({
   baseQuestionIds: z.array(z.uuid()).optional(),
 });
 
+const generateConfigSchema = z.object({
+  useAI: z.boolean().default(false),
+  items: z.array(generationItemSchema).optional(),
+  onlyMyQuestions: z.boolean().default(false),
+  disciplineId: z.uuid(),
+  difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
+  count: z.number().min(1).max(50).default(10),
+  generalPrompt: z.string().optional(),
+});
+
 const createExamSchema = z
   .object({
     title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres'),
@@ -22,17 +32,7 @@ const createExamSchema = z
 
     newQuestions: z.array(createQuestionSchema).optional(),
 
-    generateConfig: z
-      .object({
-        useAI: z.boolean().default(false),
-        items: z.array(generationItemSchema).optional(),
-        onlyMyQuestions: z.boolean().default(false),
-        disciplineId: z.uuid(),
-        difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
-        count: z.number().min(1).max(50).default(10),
-        generalPrompt: z.string().optional(),
-      })
-      .optional(),
+    generateConfig: generateConfigSchema.optional(),
   })
   .refine(
     (data) => {
@@ -49,3 +49,5 @@ const createExamSchema = z
   );
 
 export class CreateExamDto extends createZodDto(createExamSchema) {}
+export class GenerateExamConfigDto extends createZodDto(generateConfigSchema) {}
+export class GenerationItemDto extends createZodDto(generationItemSchema) {}

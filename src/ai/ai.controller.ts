@@ -4,9 +4,11 @@ import { GenerateQuestionDto } from './dto/generate-question.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('ai')
 @UseGuards(AuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 

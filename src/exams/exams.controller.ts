@@ -13,28 +13,38 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, GenerateExamConfigDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { FindExamsDto } from './dto/find-exams.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { PdfService } from '../export/pdf.service';
+import { DocxService } from '../export/docx.service';
+import { ExportExamData } from '../export/export.interfaces';
 
 @ApiTags('Provas (Simulados)')
 @UseGuards(AuthGuard, RolesGuard)
 @ApiBearerAuth()
 @Controller('exams')
 export class ExamsController {
-  constructor(private readonly examsService: ExamsService) {}
+  constructor(
+    private readonly examsService: ExamsService,
+    private readonly pdfService: PdfService,
+    private readonly docxService: DocxService,
+  ) {}
 
   @Post()
   @Roles('PROFESSOR')
@@ -56,7 +66,7 @@ export class ExamsController {
   @ApiOperation({
     summary: 'Gera questões com IA para curadoria (NÃO salva no banco)',
   })
-  async previewGeneration(@Body() config: CreateExamDto['generateConfig']) {
+  async previewGeneration(@Body() config: GenerateExamConfigDto) {
     if (!config)
       throw new BadRequestException(
         'Configuração de geração é obrigatória para o preview.',
@@ -115,5 +125,69 @@ export class ExamsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     await this.examsService.remove(id, req.user.sub);
+  }
+
+  @Get(':id/download')
+  @Roles('PROFESSOR', 'STUDENT')
+  @ApiOperation({ summary: 'Baixar a prova em PDF ou Word' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    enum: ['pdf', 'docx'],
+    description: 'Formato do arquivo (padrão: pdf)',
+  })
+  @ApiResponse({ status: 200, description: 'Arquivo gerado e baixado.' })
+  async downloadExam(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('format') format: string = 'pdf',
+    @Res() res: Response,
+  ) {
+    const exam = await this.examsService.findOne(id);
+
+    const exportData: ExportExamData = {
+      title: exam.title,
+      description: exam.description,
+      creator: exam.creator,
+      questions: exam.questions.map((item) => ({
+        question: {
+          statement: item.question.statement,
+          type: item.question.type,
+          alternatives: Array.isArray(item.question.alternatives)
+            ? item.question.alternatives.map((alt) => {
+                if (typeof alt === 'object' && alt !== null && 'text' in alt) {
+                  return { text: String((alt as { text: unknown }).text) };
+                }
+                if (typeof alt === 'object') {
+                  return { text: JSON.stringify(alt) };
+                }
+                return { text: String(alt) };
+              })
+            : [],
+        },
+      })),
+    };
+
+    let buffer: Buffer;
+    let mimeType: string;
+    let extension: string;
+
+    if (format === 'docx') {
+      buffer = await this.docxService.generateExamDocx(exportData);
+      mimeType =
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      extension = 'docx';
+    } else {
+      buffer = await this.pdfService.generateExamPdf(exportData);
+      mimeType = 'application/pdf';
+      extension = 'pdf';
+    }
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Disposition': `attachment; filename="prova-${id}.${extension}"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.end(buffer);
   }
 }
