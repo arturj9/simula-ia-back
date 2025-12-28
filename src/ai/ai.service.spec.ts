@@ -154,6 +154,35 @@ describe('AiService', () => {
     );
   });
 
+  it('deve gerar uma questão DRAWING corretamente', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () =>
+          JSON.stringify({
+            statement: 'Desenhe uma árvore.',
+            alternatives: [],
+            correctAnswer: 'Desenho da árvore',
+            explanation: 'Critérios de avaliação',
+          }),
+      },
+    });
+
+    const dto = {
+      topic: 'Arte',
+      difficulty: 'EASY' as const,
+      type: 'DRAWING' as const,
+    };
+
+    const result = await service.generateQuestion(dto);
+
+    expect(result.alternatives).toHaveLength(0);
+    expect(mockGenerateContent).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'O campo "alternatives" DEVE ser um array vazio []',
+      ),
+    );
+  });
+
   it('deve usar questões base do banco para contexto (Few-Shot Prompting)', async () => {
     prismaMock.question.findMany.mockResolvedValue([
       { statement: 'Base 1', correctAnswer: 'X' },
