@@ -31,7 +31,7 @@ export class AiService {
       );
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
 
   async generateQuestion(dto: GenerateQuestionDto): Promise<AIResponse> {
@@ -80,6 +80,8 @@ export class AiService {
       typeRules =
         'O JSON DEVE ter um campo "alternatives" com exatamente 2 objetos';
     } else if (dto.type === 'DISCURSIVE') {
+      typeRules = 'O campo "alternatives" DEVE ser um array vazio []';
+    } else if (dto.type === 'DRAWING') {
       typeRules = 'O campo "alternatives" DEVE ser um array vazio []';
     }
 
