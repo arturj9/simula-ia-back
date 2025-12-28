@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, GenerateExamConfigDto } from './dto/create-exam.dto';
 import { Prisma } from '@prisma/client';
 import { FindExamsDto } from './dto/find-exams.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -20,9 +20,7 @@ export class ExamsService {
     private readonly aiService: AiService,
   ) {}
 
-  async previewAiGeneration(
-    config: NonNullable<CreateExamDto['generateConfig']>,
-  ) {
+  async previewAiGeneration(config: NonNullable<GenerateExamConfigDto>) {
     const itemsToGenerate = config.items ?? [];
 
     if (!config.useAI || itemsToGenerate.length === 0) {
@@ -306,7 +304,7 @@ export class ExamsService {
 
   private async generateQuestions(
     userId: string,
-    config: NonNullable<CreateExamDto['generateConfig']>,
+    config: NonNullable<GenerateExamConfigDto>,
   ): Promise<string[]> {
     if (config.useAI) {
       if (!config.items || config.items.length === 0) {
@@ -354,7 +352,7 @@ export class ExamsService {
       }
 
       const results = await Promise.all(promises);
-      newQuestionIds.push(...results);
+      newQuestionIds.push(...(results as string[]));
       return newQuestionIds;
     } else {
       if (!config.count)
@@ -365,7 +363,7 @@ export class ExamsService {
 
   private async findRandomQuestionsFromDb(
     userId: string,
-    config: NonNullable<CreateExamDto['generateConfig']>,
+    config: NonNullable<GenerateExamConfigDto>,
   ): Promise<string[]> {
     const count = config.count ?? 0;
 
