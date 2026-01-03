@@ -77,6 +77,7 @@ export class ExamsService {
         creatorId: userId,
         visibility: data.visibility,
         disciplineId:
+          data.disciplineId ||
           data.generateConfig?.disciplineId ||
           data.newQuestions?.[0]?.disciplineId,
       },

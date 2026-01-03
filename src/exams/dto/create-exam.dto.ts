@@ -27,6 +27,7 @@ const createExamSchema = z
     title: z.string().min(3, 'O título deve ter pelo menos 3 caracteres'),
     description: z.string().optional(),
     visibility: z.enum(['PUBLIC', 'PRIVATE']).default('PRIVATE'),
+    disciplineId: z.uuid().optional(),
 
     questionIds: z.array(z.uuid()).optional(),
 
