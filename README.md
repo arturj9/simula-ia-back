@@ -1,6 +1,6 @@
 # 🧠 Simula.IA - Backend
 
-> API inteligente para geração, gestão e correção automática de simulados usando Inteligência Artificial Generativa.
+> API inteligente para geração e gestão de simulados usando Inteligência Artificial Generativa.
 
 ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -90,3 +90,4 @@ npm run test
 # Verificar cobertura (Coverage)
 npm run test:cov
 ```
+
